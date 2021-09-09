@@ -8,7 +8,7 @@ inputs:
 outputs:
   random-number:
     description: "Current Path"
-    value: ${{ github.workspace }}
+    value: $GITHUB_SHA
 runs:
   using: "composite"
   steps:
