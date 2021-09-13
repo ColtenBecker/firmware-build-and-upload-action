@@ -4,16 +4,24 @@ inputs:
   file_path:  # id of input
     description: 'Who to greet'
     required: true
-    default: 'World'
 outputs:
   random-number:
     description: "Current Path"
     value: $GITHUB_SHA
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ${{ github.workspace }}/work
+
 runs:
   using: "composite"
   steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
+    - name: Current directory
+      run: |
+      pwd
     - name: File Existence
       uses: andstor/file-existence-action@v1.0.1
       with:
