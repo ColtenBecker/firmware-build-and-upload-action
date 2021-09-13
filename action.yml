@@ -14,7 +14,7 @@ runs:
   steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-    - run: cd ${{ github.workspace }}/work
+    - run: cd ${{ github.workspace }}/workflows
       shell: bash
     - run: pwd
       shell: bash
