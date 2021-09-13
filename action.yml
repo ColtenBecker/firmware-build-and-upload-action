@@ -16,7 +16,9 @@ runs:
     - uses: actions/checkout@v2
     - run: cd ${{ github.workspace }}/workflows
       shell: bash
-    - run: pwd
+    - run: cd ${{inputs.file_path}}
+      shell: bash
+    - run: cd $file_path
       shell: bash
     - name: Set SHA Short name
       run: |
