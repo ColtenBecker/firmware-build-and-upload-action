@@ -12,7 +12,6 @@ outputs:
 defaults:
   run:
     shell: bash
-    working-directory: ${{ github.workspace }}/work
 
 runs:
   using: "composite"
