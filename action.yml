@@ -18,9 +18,12 @@ runs:
   steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-    - name: Current directory
+    - name: Set SHA Short name
       run: |
-      pwd
+        github_sha_short=`echo $GITHUB_SHA | cut -c1-8`
+        echo "GITHUB_SHA_SHORT=$github_sha_short" >> $GITHUB_ENV
+        pwd
+        echo ${GITHUB_SHA_SHORT}
     - name: File Existence
       uses: andstor/file-existence-action@v1.0.1
       with:
