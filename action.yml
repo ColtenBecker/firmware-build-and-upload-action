@@ -7,11 +7,7 @@ inputs:
 outputs:
   random-number:
     description: "Current Path"
-    value: $GITHUB_SHA
-
-defaults:
-  run:
-    shell: bash
+    value: ${{ steps.sha-short.outputs.sha_short }}
 
 runs:
   using: "composite"
@@ -19,12 +15,17 @@ runs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
     - run: cd ${{ github.workspace }}/work
+      shell: bash
     - run: pwd
+      shell: bash
     - name: Set SHA Short name
       run: |
         github_sha_short=`echo $GITHUB_SHA | cut -c1-8`
         echo "GITHUB_SHA_SHORT=$github_sha_short" >> $GITHUB_ENV
-        echo ${GITHUB_SHA_SHORT}
+      shell: bash
+    - id: sha-short
+      run: echo "::set-output name=sha_short::$(echo $GITHUB_SHA_SHORT)"
+      shell: bash
     - name: File Existence
       uses: andstor/file-existence-action@v1.0.1
       with:
