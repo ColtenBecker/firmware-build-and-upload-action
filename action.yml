@@ -1,38 +1,69 @@
 name: 'Firmware Build and Upload'
 description: 'Builds firmware and uploads it to google drive'
 inputs:
-  file_path:  # id of input
-    description: 'Who to greet'
+  version:  # id of input
+    description: 'Firmware image version'
     required: true
-outputs:
-  random-number:
-    description: "Current Path"
-    value: ${{ steps.sha-short.outputs.sha_short }}
 
 runs:
   using: "composite"
+  env: 
+    FIRMWARE_PATH: ${{ github.workspace }}/work/
+    XSA_FOLDER_PATH: ${{ github.workspace }}/osage_radar.sdk/
+    GDRIVE_CREDENTIALS_JSON_FILE: /home/ghrunner/Documents/credentials.json
+
   steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
-    - run: cd ${{ github.workspace }}/workflows
+    - name: checkout
+      uses: actions/checkout@v2
+    - name: Build Hardware
+      timeout-minutes: 40
+      run: |
+        cd ${{ github.workspace }}/work/
+        source /opt/Xilinx/Vivado/2020.2/settings64.sh
+        make link_steering_vec setup compile VER=${{ inputs.version }}
       shell: bash
-    - run: cd ${{inputs.file_path}}
-      shell: bash
-    - run: cd $file_path
+    - name: Build PS
+      uses: nick-invision/retry@v2.4.0
+      with:
+        timeout_minutes: 10
+        max_attempts: 3
+        command: |
+          cd ${{ github.workspace }}/work/
+          source /opt/Xilinx/Vivado/2020.2/settings64.sh
+          make clean_sdk sdk
+    - name: File Existence
+      uses: andstor/file-existence-action@v1.0.1
+      with:
+        # must provide full path to files
+        files: "${{ env.FIRMWARE_PATH }}BOOT_${{ inputs.version }}.bin, ${{ env.FIRMWARE_PATH }}BOOT_golden.bin"
+        # This is poorly named, but it causes the step to fail if the files aren't found
+        allow_failure: true
+    - name: Set branch name
+      run: |
+        if [ "${{ github.head_ref }}" == "" ]; then
+          branch_name=`echo ${GITHUB_REF#refs/heads/}`
+        else
+          branch_name=${{ github.head_ref }}
+        fi
+
+        echo "BRANCH_NAME_RAW=$branch_name" >> $GITHUB_ENV
+
+        # Now sanitize removing "/"
+        branch_name=${branch_name////_}
+        branch_name=${branch_name//refs_tags_/}
+        echo "BRANCH_NAME=$branch_name" >> $GITHUB_ENV
       shell: bash
     - name: Set SHA Short name
       run: |
         github_sha_short=`echo $GITHUB_SHA | cut -c1-8`
         echo "GITHUB_SHA_SHORT=$github_sha_short" >> $GITHUB_ENV
       shell: bash
-    - id: sha-short
-      run: echo "::set-output name=sha_short::$(echo $GITHUB_SHA_SHORT)"
+    - name: Upload firmware to google drive
+      run: |
+        new_folder_name=${BRANCH_NAME}_commit-${GITHUB_SHA_SHORT}
+        cd ${{ github.workspace }}/.github/scripts/
+        cp ${GDRIVE_CREDENTIALS_JSON_FILE} .
+        python3 google_drive.py -s $new_folder_name -f ${FIRMWARE_PATH} -e .bin -nf ${{ inputs.version }}
+        python3 google_drive.py -s $new_folder_name -f ${XSA_FOLDER_PATH} -e .xsa -nf ${{ inputs.version }}
       shell: bash
-    - name: File Existence
-      uses: andstor/file-existence-action@v1.0.1
-      with:
-        # must provide full path to files
-        files: "${{ inputs.file_path }}/workflows/file_check.yml"
-        # This is poorly named, but it causes the step to fail if the files aren't found
-        allow_failure: true
         
