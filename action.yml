@@ -20,11 +20,10 @@ runs:
     - name: checkout
       uses: actions/checkout@v2
     - name: Build Hardware
-      timeout-minutes: 40
       run: |
         cd ${{ github.workspace }}/work/
         source /opt/Xilinx/Vivado/2020.2/settings64.sh
-        make link_steering_vec setup compile VER=${{ inputs.version }}
+        timeout 40m make link_steering_vec setup compile VER=${{ inputs.version }}
       shell: bash
     - name: Build PS
       uses: nick-invision/retry@v2.4.0
