@@ -1,17 +1,21 @@
 name: 'Firmware Build and Upload'
 description: 'Builds firmware and uploads it to google drive'
 inputs:
+  firmware_path:  # id of input
+    description: 'File path to main image and golden image'
+    required: true
   version:  # id of input
     description: 'Firmware image version'
+    required: true
+  xsa_folder_path:  # id of input
+    description: 'File path to the .xsa file'
+    required: true
+  gdrive_credentials_file:  # id of input
+    description: 'File path to google drive credentials file'
     required: true
 
 runs:
   using: "composite"
-  env: 
-    FIRMWARE_PATH: ${{ github.workspace }}/work/
-    XSA_FOLDER_PATH: ${{ github.workspace }}/osage_radar.sdk/
-    GDRIVE_CREDENTIALS_JSON_FILE: /home/ghrunner/Documents/credentials.json
-
   steps:
     - name: checkout
       uses: actions/checkout@v2
@@ -35,7 +39,7 @@ runs:
       uses: andstor/file-existence-action@v1.0.1
       with:
         # must provide full path to files
-        files: "${{ env.FIRMWARE_PATH }}BOOT_${{ inputs.version }}.bin, ${{ env.FIRMWARE_PATH }}BOOT_golden.bin"
+        files: "${{ inputs.firmware_path }}BOOT_${{ inputs.version }}.bin, ${{ inputs.firmware_path }}BOOT_golden.bin"
         # This is poorly named, but it causes the step to fail if the files aren't found
         allow_failure: true
     - name: Set branch name
@@ -62,8 +66,8 @@ runs:
       run: |
         new_folder_name=${BRANCH_NAME}_commit-${GITHUB_SHA_SHORT}
         cd ${{ github.workspace }}/.github/scripts/
-        cp ${GDRIVE_CREDENTIALS_JSON_FILE} .
-        python3 google_drive.py -s $new_folder_name -f ${FIRMWARE_PATH} -e .bin -nf ${{ inputs.version }}
-        python3 google_drive.py -s $new_folder_name -f ${XSA_FOLDER_PATH} -e .xsa -nf ${{ inputs.version }}
+        cp ${{ inputs.gdrive_credentials_file }} .
+        python3 google_drive.py -s $new_folder_name -f ${{ inputs.firmware_path }} -e .bin -nf ${{ inputs.version }}
+        python3 google_drive.py -s $new_folder_name -f ${{ inputs.xsa_folder_path }} -e .xsa -nf ${{ inputs.version }}
       shell: bash
         
