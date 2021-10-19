@@ -33,4 +33,5 @@ runs:
         echo ${{ github.event.workflow_run.head_sha }}
         echo "BRANCH_SHA_1=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_ENV
         echo "BRANCH_NAME_1=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_ENV
+      shell: bash
         
