@@ -29,6 +29,7 @@ runs:
         echo "GITHUB_SHA_SHORT=$github_sha_short" >> $GITHUB_ENV
       shell: bash
     - run: git branch
+      shell: bash
     - run: |
         echo ${{ github.event.workflow_run.head_sha }}
         echo "BRANCH_SHA_1=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_ENV
