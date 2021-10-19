@@ -3,44 +3,11 @@ description: 'Builds firmware and uploads it to google drive'
 inputs:
   firmware_path:  # id of input
     description: 'File path to main image and golden image'
-    required: true
-  version:  # id of input
-    description: 'Firmware image version'
-    required: true
-  xsa_folder_path:  # id of input
-    description: 'File path to the .xsa file'
-    required: true
-  gdrive_credentials_file:  # id of input
-    description: 'File path to google drive credentials file'
-    required: true
+    required: false
 
 runs:
   using: "composite"
   steps:
-    - name: checkout
-      uses: actions/checkout@v2
-    - name: Build Hardware
-      run: |
-        cd ${{ github.workspace }}/work/
-        source /opt/Xilinx/Vivado/2020.2/settings64.sh
-        timeout 40m make link_steering_vec setup compile VER=${{ inputs.version }}
-      shell: bash
-    - name: Build PS
-      uses: nick-invision/retry@v2.4.0
-      with:
-        timeout_minutes: 10
-        max_attempts: 3
-        command: |
-          cd ${{ github.workspace }}/work/
-          source /opt/Xilinx/Vivado/2020.2/settings64.sh
-          make clean_sdk sdk
-    - name: File Existence
-      uses: andstor/file-existence-action@v1.0.1
-      with:
-        # must provide full path to files
-        files: "${{ inputs.firmware_path }}BOOT_${{ inputs.version }}.bin, ${{ inputs.firmware_path }}BOOT_golden.bin"
-        # This is poorly named, but it causes the step to fail if the files aren't found
-        allow_failure: true
     - name: Set branch name
       run: |
         if [ "${{ github.head_ref }}" == "" ]; then
@@ -61,12 +28,9 @@ runs:
         github_sha_short=`echo $GITHUB_SHA | cut -c1-8`
         echo "GITHUB_SHA_SHORT=$github_sha_short" >> $GITHUB_ENV
       shell: bash
-    - name: Upload firmware to google drive
-      run: |
-        new_folder_name=${BRANCH_NAME}_commit-${GITHUB_SHA_SHORT}
-        cd ${{ github.workspace }}/.github/scripts/
-        cp ${{ inputs.gdrive_credentials_file }} .
-        python3 google_drive.py -s $new_folder_name -f ${{ inputs.firmware_path }} -e .bin -nf ${{ inputs.version }}
-        python3 google_drive.py -s $new_folder_name -f ${{ inputs.xsa_folder_path }} -e .xsa -nf ${{ inputs.version }}
-      shell: bash
+    - run: git branch
+    - run: |
+        echo ${{ github.event.workflow_run.head_sha }}
+        echo "BRANCH_SHA_1=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_ENV
+        echo "BRANCH_NAME_1=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_ENV
         
